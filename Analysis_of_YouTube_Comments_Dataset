@@ -1,0 +1,163 @@
+# =========================================================
+# 🎓 INTRO TO DATA SCIENCE PROJECT
+# Title: Analysis of YouTube Comments Dataset
+# Dataset: YoutubeCommentsDataSet.csv
+# =========================================================
+
+import matplotlib
+matplotlib.use('Agg')  # ✅ Fix lỗi Tkinter trên Windows (no GUI)
+import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
+import re
+import seaborn as sns
+from textblob import TextBlob
+from wordcloud import WordCloud
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+from collections import Counter
+
+# ---------------------------------------------------------
+# 1️⃣ LOAD DATASET
+# ---------------------------------------------------------
+
+df = pd.read_csv("YoutubeCommentsDataSet.csv", encoding="utf-8")
+
+print("✅ Dataset loaded successfully!")
+print(f"Shape: {df.shape}")
+print(df.head())
+
+# ---------------------------------------------------------
+# 2️⃣ DATA CLEANING & PREPROCESSING
+# ---------------------------------------------------------
+
+df.columns = df.columns.str.strip().str.lower()
+df = df.dropna(subset=['comment'])
+
+def clean_text(text):
+    text = str(text).lower()
+    text = re.sub(r'http\S+', '', text)
+    text = re.sub(r'[^a-z\s]', '', text)
+    return text
+
+df['clean_comment'] = df['comment'].apply(clean_text)
+print("\n✅ Data cleaned successfully!")
+print(df.head())
+
+# ---------------------------------------------------------
+# 3️⃣ SENTIMENT ANALYSIS 
+# ---------------------------------------------------------
+
+def get_sentiment(text):
+    polarity = TextBlob(text).sentiment.polarity
+    if polarity > 0:
+        return 'positive'
+    elif polarity < 0:
+        return 'negative'
+    else:
+        return 'neutral'
+
+df['predicted_sentiment'] = df['clean_comment'].apply(get_sentiment)
+print("\n✅ Sentiment prediction completed!")
+print(df[['comment', 'sentiment', 'predicted_sentiment']].head(10))
+
+# ---------------------------------------------------------
+# 4️⃣ Evaluation
+# ---------------------------------------------------------
+
+y_true = df['sentiment']
+y_pred = df['predicted_sentiment']
+
+acc = accuracy_score(y_true, y_pred)
+print(f"\n Accuracy of TextBlob sentiment prediction: {acc:.2%}")
+
+print("\nClassification Report:")
+print(classification_report(y_true, y_pred))
+
+
+cm = confusion_matrix(y_true, y_pred, labels=['positive', 'neutral', 'negative'])
+sns.heatmap(cm, annot=True, fmt='d', cmap='Blues',
+            xticklabels=['positive', 'neutral', 'negative'],
+            yticklabels=['positive', 'neutral', 'negative'])
+plt.title("Confusion Matrix: True vs Predicted Sentiment")
+plt.xlabel("Predicted")
+plt.ylabel("True")
+plt.savefig("confusion_matrix.png")
+print("Saved chart: confusion_matrix.png")
+plt.close()
+
+# ---------------------------------------------------------
+# 5️⃣ EXPLORATORY DATA ANALYSIS (EDA)
+# ---------------------------------------------------------
+
+sns.set(style="whitegrid")
+plt.rcParams["figure.figsize"] = (10, 5)
+
+# A. Phân bố cảm xúc
+fig, ax = plt.subplots(1, 2, figsize=(12, 5))
+sns.countplot(x='sentiment', data=df, order=['positive', 'neutral', 'negative'], ax=ax[0])
+ax[0].set_title("Sentiment Distribution (True Labels)")
+sns.countplot(x='predicted_sentiment', data=df, order=['positive', 'neutral', 'negative'], ax=ax[1])
+ax[1].set_title("Sentiment Distribution (Predicted by TextBlob)")
+plt.tight_layout()
+plt.savefig("eda_sentiment_distribution.png")
+plt.close()
+
+# B. Top 20 từ phổ biến
+all_words = " ".join(df["clean_comment"]).split()
+word_counts = Counter(all_words)
+top_words = pd.DataFrame(word_counts.most_common(20), columns=["word", "count"])
+sns.barplot(y="word", x="count", data=top_words, palette="viridis")
+plt.title("Top 20 Most Frequent Words in YouTube Comments")
+plt.savefig("eda_top_words.png")
+plt.close()
+
+# C. WordCloud theo loại sentiment
+pos_text = " ".join(df[df["predicted_sentiment"] == "positive"]["clean_comment"])
+neg_text = " ".join(df[df["predicted_sentiment"] == "negative"]["clean_comment"])
+neu_text = " ".join(df[df["predicted_sentiment"] == "neutral"]["clean_comment"])
+
+WordCloud(width=800, height=400, background_color="white").generate(pos_text).to_file("eda_wordcloud_positive.png")
+WordCloud(width=800, height=400, background_color="black", colormap="Reds").generate(neg_text).to_file("eda_wordcloud_negative.png")
+WordCloud(width=800, height=400, background_color="lightgray").generate(neu_text).to_file("eda_wordcloud_neutral.png")
+
+# D. Phân bố độ dài comment
+df["comment_length"] = df["clean_comment"].apply(lambda x: len(x.split()))
+sns.boxplot(x="predicted_sentiment", y="comment_length", data=df, order=["positive", "neutral", "negative"])
+plt.title("Comment Length Distribution by Predicted Sentiment")
+plt.savefig("eda_comment_length_boxplot.png")
+plt.close()
+
+# E. Biểu đồ tròn tỉ lệ cảm xúc
+sentiment_counts = df["predicted_sentiment"].value_counts()
+plt.figure(figsize=(6, 6))
+plt.pie(sentiment_counts, labels=sentiment_counts.index, autopct='%1.1f%%', startangle=90, colors=sns.color_palette('pastel'))
+plt.title("Proportion of Predicted Sentiments")
+plt.savefig("eda_sentiment_piechart.png")
+plt.close()
+
+print("\n EDA Visualization completed! Check your folder for PNG files.")
+
+# ---------------------------------------------------------
+# 6️⃣ WORDCLOUD VISUALIZATION
+# ---------------------------------------------------------
+
+pos_text = " ".join(df[df['predicted_sentiment'] == 'positive']['clean_comment'])
+neg_text = " ".join(df[df['predicted_sentiment'] == 'negative']['clean_comment'])
+
+wc_pos = WordCloud(width=800, height=400, background_color='white').generate(pos_text)
+wc_neg = WordCloud(width=800, height=400, background_color='black').generate(neg_text)
+
+wc_pos.to_file("wordcloud_positive.png")
+wc_neg.to_file("wordcloud_negative.png")
+print("Saved wordclouds: wordcloud_positive.png & wordcloud_negative.png")
+
+# ---------------------------------------------------------
+# 7️⃣ INSIGHTS
+# ---------------------------------------------------------
+
+print("\n Key Insights:")
+print("- TextBlob đạt độ chính xác khoảng {:.2f}% khi so sánh với nhãn thật.".format(acc*100))
+print("- Phân bố sentiment thật và sentiment dự đoán có thể khác nhau nhẹ.")
+print("- WordCloud cho thấy các từ khóa tích cực thường liên quan đến sự hài lòng, tiện lợi.")
+print("- Các từ khóa tiêu cực liên quan đến trải nghiệm hoặc hạn chế của dịch vụ.")
+print("\n Analysis complete. Check PNG files for charts.")
