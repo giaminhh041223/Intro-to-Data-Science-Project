@@ -5,7 +5,7 @@
 # =========================================================
 
 import matplotlib
-matplotlib.use('Agg')  # ✅ Fix lỗi Tkinter trên Windows (no GUI)
+matplotlib.use('Agg')  
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
@@ -161,3 +161,4 @@ print("- Phân bố sentiment thật và sentiment dự đoán có thể khác n
 print("- WordCloud cho thấy các từ khóa tích cực thường liên quan đến sự hài lòng, tiện lợi.")
 print("- Các từ khóa tiêu cực liên quan đến trải nghiệm hoặc hạn chế của dịch vụ.")
 print("\n Analysis complete. Check PNG files for charts.")
+
