@@ -1,0 +1,9 @@
+# Bỏ qua thư mục môi trường ảo
+venv/
+env/
+.env
+
+# Bỏ qua file rác hệ thống Python
+__pycache__/
+*.pyc
+
