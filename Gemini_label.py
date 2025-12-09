@@ -11,7 +11,7 @@ import re
 # CONFIGURATION
 # ==========================================
 # Get key at: https://aistudio.google.com/app/apikey
-GEMINI_API_KEY = "AIzaSyDoThstHuC8biLLJfJiCrs92sTx_TY-0LM" 
+GEMINI_API_KEY = "none" 
 
 # Model Configuration
 genai.configure(api_key=GEMINI_API_KEY)
